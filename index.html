@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Способность TieBreaker</title>
+
+    <!-- Google Fonts & Material Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">
+    </script>
+
+    <style>
+        /* ===== RESET & BASE ===== */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            /* Цвета из вашей картинки */
+            --bg-main: #101021;
+            --bg-card: #1C1D36;
+            --bg-input: #272948;
+            --text-main: #FFFFFF;
+            --text-sub: #A5A5C0;
+            --accent-purple: #7E54F3;
+            --accent-purple-hover: #6B45D3;
+            --ripple-color: rgba(255, 255, 255, 0.3);
+            --radius-card: 16px;
+            --radius-btn: 12px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html {
+            font-size: 16px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Roboto', -apple-system, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px 16px 40px;
+            margin: 0;
+        }
+
+        /* ===== APP CONTAINER ===== */
+        .app-container {
+            max-width: 560px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(28, 29, 54, 0.5);
+            backdrop-filter: blur(4px);
+            border-radius: var(--radius-card);
+            padding: 12px 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-left h1 {
+            font-weight: 600;
+            font-size: 18px;
+            color: var(--accent-purple);
+        }
+
+        /* Анимация кубика в шапке */
+        .dice-header {
+            display: inline-block;
+            font-size: 24px;
+            animation: diceBounce 3s ease-in-out infinite;
+            transform-origin: center;
+        }
+
+        @keyframes diceBounce {
+            0% { transform: scale(1) rotate(0deg); }
+            20% { transform: scale(1.15) rotate(10deg); }
+            40% { transform: scale(0.95) rotate(-5deg); }
+            60% { transform: scale(1.1) rotate(5deg); }
+            80% { transform: scale(1) rotate(-2deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            color: var(--text-sub);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.05);
+        }
+
+        /* Кнопка с иконкой людей и счетчиком */
+        .user-count-btn {
+            border-radius: 20px;
+            width: auto;
+            padding: 0 16px;
+            gap: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(100, 181, 246, 0.1);
+            min-width: 44px;
+            cursor: default;
+        }
+        .user-count-btn .people-icon {
+            color: #64B5F6;
+            font-size: 20px;
+        }
+        .user-count-btn .count-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        /* ===== CARDS ===== */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-card);
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-title {
+            color: var(--text-sub);
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+        }
+
+        .card-input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid transparent;
+            border-radius: var(--radius-btn);
+            padding: 12px 16px;
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: var(--transition);
+        }
+        .card-input:focus {
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 2px rgba(126, 84, 243, 0.3);
+        }
+        .card-input::placeholder {
+            color: #5A5C7A;
+        }
+
+        /* ===== OPTIONS ROW (Цвет / Шанс / Кнопка) ===== */
+        .options-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+        }
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .option-label {
+            color: var(--text-sub);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .color-picker-wrap {
+            width: 52px;
+            height: 44px;
+            background: var(--bg-input);
+            border-radius: var(--radius-btn);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid transparent;
+            transition: var(--transition);
+        }
+        .color-picker-wrap:hover {
+            border-color: var(--accent-purple);
+        }
+        .color-picker-wrap input[type="color"] {
+            width: 28px;
+            height: 28px;
+            border: none;
+            padding: 0;
+            background: none;
+            cursor: pointer;
+        }
+
+        .chance-input {
+            width: 70px;
+            height: 44px;
+            background: var(--bg-input);
+            border: 1px solid transparent;
+            border-radius: var(--radius-btn);
+            color: #fff;
+            text-align: center;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: var(--transition);
+            -moz-appearance: textfield;
+        }
+        .chance-input:focus {
+            border-color: var(--accent-purple);
+        }
+        .chance-input::-webkit-outer-spin-button,
+        .chance-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            font-family: inherit;
+            font-weight: 500;
+            font-size: 14px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-btn);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background var(--transition), transform 0.15s;
+            position: relative;
+            overflow: hidden;
+            min-height: 44px;
+            user-select: none;
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-primary {
+            background: var(--accent-purple);
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: var(--accent-purple-hover);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-sub);
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: #5A5C7A;
+            min-height: 32px;
+            min-width: 32px;
+            padding: 4px;
+        }
+        .btn-danger:hover {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.2);
+        }
+
+        .btn-pick {
+            width: 100%;
+            padding: 18px;
+            background: var(--accent-purple);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-card);
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 20px rgba(126, 84, 243, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            font-family: inherit;
+        }
+        .btn-pick:active {
+            transform: scale(0.95);
+        }
+        .btn-pick:hover:not(:disabled) {
+            box-shadow: 0 6px 25px rgba(126, 84, 243, 0.5);
+            background: var(--accent-purple-hover);
+        }
+        .btn-pick:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Анимация вращения кубика на кнопке выбора */
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+        .btn-pick.rolling .material-icons {
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* ===== PARTICIPANTS LIST ===== */
+        .participants-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 40px;
+        }
+        
+        .participant-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border-radius: var(--radius-btn);
+            border-left: 4px solid var(--accent-purple);
+            animation: slideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        .participant-item.removing {
+            animation: slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes slideIn {
+            0% { opacity: 0; transform: translateX(30px) scale(0.96); }
+            100% { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes slideOut {
+            0% { opacity: 1; transform: translateX(0) scale(1); }
+            100% { opacity: 0; transform: translateX(-30px) scale(0.94); }
+        }
+
+        .p-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+        .p-color {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .p-name {
+            font-weight: 500;
+            font-size: 14px;
+            word-break: break-word;
+        }
+        .p-chance {
+            color: var(--text-sub);
+            font-size: 12px;
+            background: rgba(255,255,255,0.05);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .empty-msg {
+            color: var(--text-sub);
+            font-size: 14px;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .btn-clear-all {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            color: var(--text-sub);
+            padding: 8px 14px;
+            border-radius: var(--radius-btn);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: inherit;
+        }
+        .btn-clear-all:hover {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+
+        /* ===== RIPPLE ===== */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.35);
+            transform: scale(0);
+            animation: rippleAnim 0.6s linear;
+            pointer-events: none;
+        }
+        @keyframes rippleAnim {
+            to { transform: scale(4); opacity: 0; }
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+        .modal-overlay.active { display: flex; }
+        
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: var(--radius-card);
+            padding: 30px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            animation: resultPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            border: 1px solid rgba(126, 84, 243, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes resultPop {
+            0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .winner-label {
+            font-size: 14px;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .winner-name {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 10px 0;
+            word-break: break-word;
+        }
+        .winner-chance {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin-bottom: 15px;
+        }
+
+        .qr-container {
+            background: #fff;
+            padding: 10px;
+            border-radius: var(--radius-btn);
+            margin: 15px auto;
+            max-width: 190px;
+            display: flex;
+            justify-content: center;
+        }
+        .qr-container.hidden { display: none; }
+
+        .modal-close-btn {
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            padding: 10px 30px;
+            border-radius: var(--radius-btn);
+            color: #fff;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+        .modal-close-btn:hover { background: rgba(255, 255, 255, 0.15); }
+
+        /* ===== CONFETTI ===== */
+        .confetti-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+        .confetti-piece {
+            position: absolute;
+            width: 10px; height: 10px;
+            top: -20px;
+            animation: confettiFall linear forwards;
+            opacity: 0.9;
+            border-radius: 2px;
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg) scale(0.3); opacity: 0; }
+        }
+
+        /* ===== TOAST ===== */
+        .toast-message {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--bg-card);
+            color: var(--text-main);
+            padding: 12px 24px;
+            border-radius: var(--radius-btn);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            font-weight: 500;
+            font-size: 14px;
+            z-index: 99999;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-width: 90%;
+            text-align: center;
+            pointer-events: none;
+            font-family: inherit;
+        }
+        .toast-message.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 600px) {
+            body { padding: 12px 10px 32px; }
+            .app-container { gap: 14px; }
+            .header h1 { font-size: 16px; }
+            .icon-btn { width: 36px; height: 36px; }
+            .user-count-btn { padding: 0 10px; }
+            .card { padding: 14px 14px; }
+            .options-row { flex-wrap: wrap; gap: 10px; }
+            .options-row .btn { flex: 1; }
+            .chance-input { width: 60px; }
+            .btn-clear-all { width: 100%; justify-content: center; }
+            .winner-name { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+
+        <!-- ===== HEADER ===== -->
+        <header class="header">
+            <div class="header-left">
+                <span class="dice-header">🎲</span>
+                <h1>Способность TieBreaker</h1>
+            </div>
+            <div class="header-actions">
+                <!-- Исправлено: убран onclick из HTML, добавлен id -->
+                <button class="icon-btn" id="infoBtn">
+                    <span class="material-icons" style="font-size: 20px;">info</span>
+                </button>
+                <!-- Кнопка с иконкой людей и счетчиком -->
+                <div class="icon-btn user-count-btn" onclick="showToast('👥 Участников: ' + participants.length)">
+                    <span class="material-icons people-icon">people</span>
+                    <span class="count-text" id="headerUserCount">0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- ===== ADD FORM ===== -->
+        <section class="card">
+            <div class="card-title"><span class="material-icons">person_add</span> ДОБАВИТЬ УЧАСТНИКА</div>
+            
+            <input type="text" class="card-input" id="inputName" placeholder="Введите имя..." autocomplete="off">
+            
+            <div class="options-row">
+                <div class="option-group">
+                    <span class="option-label">ЦВЕТ</span>
+                    <div class="color-picker-wrap">
+                        <input type="color" id="inputColor" value="#7E54F3">
+                    </div>
+                </div>
+                <div class="option-group">
+                    <span class="option-label">ШАНС</span>
+                    <input type="number" class="chance-input" id="inputChance" value="1" min="0">
+                </div>
+                <button class="btn btn-primary" id="addBtn" onclick="addParticipant()">
+                    <span class="material-icons">add</span> Добавить
+                </button>
+            </div>
+        </section>
+
+        <!-- ===== PARTICIPANT LIST ===== -->
+        <section class="card">
+            <div class="card-title">
+                <span class="material-icons">group</span> 
+                СПИСОК УЧАСТНИКОВ 
+            </div>
+            
+            <div class="participants-list" id="participantsList">
+                <div class="empty-msg">Список пуст. Добавьте участников выше.</div>
+            </div>
+            
+            <button class="btn-clear-all" id="clearAllBtn">
+                <!-- Иконка корзины (SVG) -->
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle;">
+                    <path d="M9 3C9 2.44772 9.44772 2 10 2H14C14.5523 2 15 2.44772 15 3V5H9V3Z"/>
+                    <path d="M3 6H21V8H3V6Z"/>
+                    <path d="M5 8L6.5 20C6.62639 21.1284 7.57612 22 8.71 22H15.29C16.4239 22 17.3736 21.1284 17.5 20L19 8H5Z"/>
+                    <rect x="9" y="10" width="2" height="8" rx="1"/>
+                    <rect x="11" y="10" width="2" height="8" rx="1"/>
+                    <rect x="13" y="10" width="2" height="8" rx="1"/>
+                </svg> 
+                Очистить все
+            </button>
+        </section>
+
+        <!-- ===== ROLL BUTTON ===== -->
+        <button class="btn-pick" id="btnPick" onclick="pickRandom()" disabled>
+            <span class="material-icons">casino</span> ВЫБРАТЬ СЛУЧАЙНО
+        </button>
+    </div>
+
+    <!-- ===== MODAL ===== -->
+    <div class="modal-overlay" id="resultModal">
+        <div class="modal-content">
+            <div class="winner-label">🎉 ПОБЕДИТЕЛЬ</div>
+            <div class="winner-name" id="winnerName">Имя</div>
+            <div class="winner-chance" id="winnerChance">Шанс: 1</div>
+            
+            <div style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px;">QR-код со ссылкой на результат</div>
+            <div class="qr-container hidden" id="qrContainer"></div>
+            
+            <button class="modal-close-btn" onclick="closeModal()">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- ===== CONFETTI CONTAINER ===== -->
+    <div class="confetti-container" id="confettiContainer"></div>
+
+    <script>
+        // ============================================================
+        //  STATE
+        // ============================================================
+        let participants = [];
+        let qrCodeInstance = null;
+        let isRolling = false;
+
+        // DOM
+        const listEl = document.getElementById('participantsList');
+        const nameInput = document.getElementById('inputName');
+        const colorInput = document.getElementById('inputColor');
+        const chanceInput = document.getElementById('inputChance');
+        const pickBtn = document.getElementById('btnPick');
+        const clearBtn = document.getElementById('clearAllBtn');
+        const modal = document.getElementById('resultModal');
+        const winnerNameEl = document.getElementById('winnerName');
+        const winnerChanceEl = document.getElementById('winnerChance');
+        const qrContainer = document.getElementById('qrContainer');
+        const headerUserCount = document.getElementById('headerUserCount');
+        const confettiContainer = document.getElementById('confettiContainer');
+
+        // ============================================================
+        //  HELPERS
+        // ============================================================
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+        }
+
+        function getChanceValue(val) {
+            const n = parseInt(val, 10);
+            return isNaN(n) ? 0 : Math.max(0, n);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ============================================================
+        //  ФУНКЦИЯ ДЛЯ КНОПКИ 'i'
+        // ============================================================
+        function showInfoAlert() {
+            alert("Участники группы, которые больше всего принимали участие в голосованиях от SXØ могут получить способность в рамках текущего голосования и повлиять на исход в случае ничьи.\n\nПринимайте участие в голосованиях, чтобы повысить шанс выпадения способности.");
+        }
+
+        // ============================================================
+        //  CRUD
+        // ============================================================
+        function addParticipant() {
+            const name = nameInput.value.trim();
+            const color = colorInput.value;
+            const chance = getChanceValue(chanceInput.value);
+
+            if (!name) {
+                shakeElement(nameInput);
+                return;
+            }
+
+            // Check duplicates
+            if (participants.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+                nameInput.value = '';
+                nameInput.placeholder = '⚠️ Уже есть!';
+                setTimeout(() => { nameInput.placeholder = 'Введите имя...'; }, 1500);
+                shakeElement(nameInput);
+                return;
+            }
+
+            participants.push({ id: generateId(), name, color, chance });
+            nameInput.value = '';
+            chanceInput.value = '1';
+            nameInput.focus();
+            renderList();
+        }
+
+        function removeParticipant(id) {
+            const items = document.querySelectorAll('.participant-item');
+            const target = Array.from(items).find(el => el.dataset.id === id);
+            if (target) {
+                target.classList.add('removing');
+                setTimeout(() => {
+                    participants = participants.filter(p => p.id !== id);
+                    renderList();
+                    closeModal();
+                }, 300);
+            } else {
+                participants = participants.filter(p => p.id !== id);
+                renderList();
+                closeModal();
+            }
+        }
+
+        function clearAll() {
+            if (participants.length === 0) return;
+            if (!confirm('Удалить всех участников?')) return;
+
+            const items = document.querySelectorAll('.participant-item');
+            items.forEach((el, i) => {
+                setTimeout(() => { el.classList.add('removing'); }, i * 40);
+            });
+
+            setTimeout(() => {
+                participants = [];
+                renderList();
+                closeModal();
+            }, items.length * 40 + 200);
+        }
+
+        // ============================================================
+        //  RENDER
+        // ============================================================
+        function renderList() {
+            if (participants.length === 0) {
+                listEl.innerHTML = `<div class="empty-msg">Список пуст. Добавьте участников выше.</div>`;
+                pickBtn.disabled = true;
+                headerUserCount.textContent = '0';
+                return;
+            }
+
+            pickBtn.disabled = false;
+            headerUserCount.textContent = participants.length;
+
+            listEl.innerHTML = participants.map((p, index) => `
+                <div class="participant-item" data-id="${p.id}" style="border-left-color: ${p.color}; animation-delay: ${index * 0.04}s;">
+                    <div class="p-info">
+                        <div class="p-color" style="background: ${p.color};"></div>
+                        <span class="p-name">${escapeHtml(p.name)}</span>
+                        <span class="p-chance">шанс ${p.chance}</span>
+                    </div>
+                    <button class="btn btn-danger" onclick="removeParticipant('${p.id}')">
+                        <span class="material-icons" style="font-size: 18px;">close</span>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // ============================================================
+        //  RANDOM PICK
+        // ============================================================
+        function pickRandom() {
+            if (isRolling) return;
+            const pool = participants.filter(p => p.chance > 0);
+            const totalChance = pool.reduce((sum, p) => sum + p.chance, 0);
+
+            if (pool.length === 0 || totalChance === 0) {
+                showToast('⚠️ Нет участников с шансом > 0');
+                return;
+            }
+
+            isRolling = true;
+            pickBtn.disabled = true;
+            pickBtn.classList.add('rolling');
+            pickBtn.innerHTML = `<span class="material-icons">casino</span> ВЫБИРАЕМ...`;
+
+            // Highlight animation
+            const items = document.querySelectorAll('.participant-item');
+            let highlightIndex = 0;
+            let step = 0;
+            const totalSteps = (4 + Math.floor(Math.random() * 3)) * items.length + Math.floor(Math.random() * items.length);
+
+            const interval = setInterval(() => {
+                items.forEach(el => el.style.background = '');
+                const current = items[highlightIndex % items.length];
+                if (current) {
+                    current.style.background = 'rgba(126, 84, 243, 0.3)';
+                    current.style.transition = 'background 0.1s';
+                }
+                highlightIndex++;
+                step++;
+
+                if (step >= totalSteps) {
+                    clearInterval(interval);
+                    const winner = weightedRandom(pool);
+                    items.forEach(el => el.style.background = '');
+                    
+                    if (winner) {
+                        showResult(winner);
+                        launchConfetti();
+                    }
+                    
+                    isRolling = false;
+                    pickBtn.disabled = false;
+                    pickBtn.classList.remove('rolling');
+                    pickBtn.innerHTML = `<span class="material-icons">casino</span> ВЫБРАТЬ СЛУЧАЙНО`;
+                }
+            }, 60 + Math.random() * 40);
+        }
+
+        function weightedRandom(items) {
+            const total = items.reduce((sum, p) => sum + p.chance, 0);
+            let rand = Math.random() * total;
+            for (const p of items) {
+                rand -= p.chance;
+                if (rand <= 0) return p;
+            }
+            return items[items.length - 1];
+        }
+
+        // ============================================================
+        //  RESULT DISPLAY & QR
+        // ============================================================
+        function showResult(participant) {
+            modal.classList.add('active');
+            winnerNameEl.textContent = participant.name;
+            winnerNameEl.style.color = participant.color;
+            winnerChanceEl.textContent = `Шанс: ${participant.chance}`;
+
+            if(qrCodeInstance) {
+                qrCodeInstance.clear();
+                qrContainer.innerHTML = '';
+                qrCodeInstance = null;
+            }
+
+            const currentUrl = window.location.href.split('?')[0];
+            const qrData = `${currentUrl}?winner=${encodeURIComponent(participant.name)}`;
+            qrContainer.classList.remove('hidden');
+
+            qrCodeInstance = new QRCode(qrContainer, {
+                text: qrData,
+                width: 160,
+                height: 160,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+
+        // ============================================================
+        //  CONFETTI
+        // ============================================================
+        function launchConfetti() {
+            const colors = ['#7c4dff', '#e91e63', '#2196f3', '#4caf50', '#ff9800', '#ffeb3b'];
+            const count = 80 + Math.floor(Math.random() * 60);
+
+            for (let i = 0; i < count; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                const size = 6 + Math.random() * 10;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.cssText = `
+                    left: ${Math.random() * 100}%;
+                    width: ${size}px;
+                    height: ${size * 0.7}px;
+                    background: ${color};
+                    animation-duration: ${2 + Math.random() * 2.5}s;
+                    animation-delay: ${Math.random() * 0.8}s;
+                `;
+                confettiContainer.appendChild(piece);
+                setTimeout(() => { if(piece.parentNode) piece.remove(); }, 5000);
+            }
+            setTimeout(() => { confettiContainer.innerHTML = ''; }, 5000);
+        }
+
+        // ============================================================
+        //  TOAST & SHAKE
+        // ============================================================
+        function showToast(message) {
+            const existing = document.querySelector('.toast-message');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.className = 'toast-message';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => { toast.classList.add('visible'); }, 10);
+            setTimeout(() => {
+                toast.classList.remove('visible');
+                setTimeout(() => { if(toast.parentNode) toast.remove(); }, 400);
+            }, 2200);
+        }
+
+        function shakeElement(el) {
+            el.style.animation = 'none';
+            requestAnimationFrame(() => {
+                el.style.animation = 'shake 0.4s ease forwards';
+            });
+            const style = document.createElement('style');
+            style.id = 'shakeStyle';
+            style.textContent = `
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); border-color: #e53935; }
+                    20% { transform: translateX(-8px); }
+                    40% { transform: translateX(8px); }
+                    60% { transform: translateX(-6px); }
+                    80% { transform: translateX(6px); }
+                }
+            `;
+            document.head.appendChild(style);
+            setTimeout(() => { el.style.animation = ''; }, 500);
+        }
+
+        // ============================================================
+        //  URL PARAM HANDLING (QR Result)
+        // ============================================================
+        function handleUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            const resultName = params.get('winner');
+            if (resultName) {
+                let participant = participants.find(p => p.name === resultName);
+                if (!participant) {
+                    participant = { id: 'virtual', name: resultName, color: '#7E54F3', chance: 1 };
+                    participants.push(participant);
+                    renderList();
+                }
+                setTimeout(() => {
+                    showResult(participant);
+                    if (participant.id === 'virtual') {
+                        participants = participants.filter(p => p.id !== 'virtual');
+                        renderList();
+                    }
+                    if (window.history && window.history.replaceState) {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                }, 300);
+            }
+        }
+
+        // ============================================================
+        //  EVENTS
+        // ============================================================
+        nameInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") addParticipant();
+        });
+        clearBtn.addEventListener('click', clearAll);
+
+        // ============================================================
+        //  INIT
+        // ============================================================
+        // Инициализация пустого списка
+        renderList();
+
+        handleUrlParams();
+
+        // ============================================================
+        //  ОБЯЗАТЕЛЬНАЯ ПРИВЯЗКА КНОПКИ ИНФОРМАЦИИ (Исправление)
+        // ============================================================
+        const infoBtn = document.getElementById('infoBtn');
+        if (infoBtn) {
+            infoBtn.addEventListener('click', showInfoAlert);
+        }
+    </script>
+</body>
+</html>
